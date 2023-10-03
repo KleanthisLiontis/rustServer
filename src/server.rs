@@ -1,5 +1,6 @@
 //Server struct and implementation everything members and methods private by default
 use std::net::TcpListener;
+use std::io::Read;
 
 pub struct Server {
     address: String,
@@ -21,17 +22,25 @@ impl Server {
         loop{
             match tcp_listener.accept() {
                 //Can ignore tupple/or each variable returned from ok wrapper by using _ instread of tuple.
-                Ok((stream,address)) => {
-                    println!("Connections accepted!")
+                Ok((mut stream,_address)) => {
+                    println!("Connections accepted!");
+                    let mut buffer = [0; 1024]; //stores 1024bytes for requests
+                    match stream.read(& mut buffer){
+                        Ok(_) => {
+                            //from lossy cannot fail so we dont have to handle errors
+                            print!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                        },
+                        Err(e) => println!("Failed to read from connection: {}", e),
+                    }
                 },
                 Err(e) => println!("Error accepting connections! {}", e),
             }
 
-            let result = tcp_listener.accept();
-            if(result.is_err()) {
-                continue;
-            }
-            let (stream,address) = result.unwrap();
+            // let result = tcp_listener.accept();
+            // if(result.is_err()) {
+            //     continue;
+            // }
+            // let (stream,address) = result.unwrap();
         };
     }
 }
