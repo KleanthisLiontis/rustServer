@@ -1,6 +1,8 @@
 //Server struct and implementation everything members and methods private by default
 use std::net::TcpListener;
+use std::convert::TryFrom;
 use std::io::Read;
+use crate::http::Request;
 
 pub struct Server {
     address: String,
@@ -28,7 +30,14 @@ impl Server {
                     match stream.read(& mut buffer){
                         Ok(_) => {
                             //from lossy cannot fail so we dont have to handle errors
+                            //Whatever we use here must implement display trait, to get client facing data to dev logs we could use {:?}. 
                             print!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                            //Get Result by try to convert from buffer of a byte slice 
+                            match Request::try_from(&buffer as &[u8]) {
+                                Ok(request) => println!("Request is OK"),
+                                Err(e) => println!("Failed to parse request: {}",e),
+                            }
+                            //This slice will now be converted into a Requests to read from. Currently not handling errors.
                         },
                         Err(e) => println!("Failed to read from connection: {}", e),
                     }
