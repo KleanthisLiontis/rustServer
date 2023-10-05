@@ -1,32 +1,52 @@
-//modules and the structs inside them themselves have different visibility
-use super::method::Method;   
+use crate::http::request;
+use super::method::{MethodError,Method};   
 use std::convert::TryFrom; 
 use std::error::Error;
 use std::str;
 use std::fmt::{Formatter,Display, Result as FmtResult,Debug};
 use std::str::Utf8Error;
 
-pub struct Request {
-    path: String,
-    query_string:Option <String>,
+pub struct Request<'life_buf> {
+    path: &'life_buf str,
+    query_string:Option <&'life_buf str>,
     //super keyword tells module to go up a directory to parent and see other children that match declaration
     //method: super::method::Method,
     method: Method,
 }
 
 //Try to convert a byte slice into our request struct
-impl TryFrom<&[u8]> for Request {
+impl<'life_buf> TryFrom<&[u8]> for Request<'life_buf> {
     type Error = ParseError;
 
-    // GET /search?name=abc&sort=1 HTTP/1.1
     fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
-        //Shuts compiler up but if this function is called Rust program will panic and exit.
         // match str::from_utf8(buffer).or(Err(ParseError::InvalidEncoding)) {
         //     Ok(request) => {}
         //     Err(e) => return Err(e),
         // }
         
-        let request: &str = str::from_utf8(buffer)?;
+        /*Check if received request matched expectations
+        First check string matches format we want:
+        GET /search?name=abc&sort=1 HTTP/1.1 */
+        let request = str::from_utf8(buffer)?;
+        let (method,request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        
+        if protocol != "HTTP/1.1" {
+            return Err(ParseError::InvalidProtocol);
+        } 
+        let method: Method = method.parse()?;
+        let mut query_string = None;
+        if let Some(i) = path.find('?') {
+            query_string = Some(&path[i+1..]);
+            path = &path[..i];
+        }
+
+        Ok(Self {
+            path: path,
+            query_string,
+            method,
+        })
         // string.encrypt();
         // buffer.encrypt();
         unimplemented!();
@@ -35,10 +55,11 @@ impl TryFrom<&[u8]> for Request {
 
 //Read the incoming request until / then reread frm that point onwards
 //If the entire request is send return none, done through Option wrapper.
-fn brkdwn_request(request: &str) -> Option<(&str,&str)>{
+fn get_next_word(request: &str) -> Option<(&str,&str)>{
+    //go char by char and index them
     for (i,c) in request.chars().enumerate() {
-        if c == ' ' {
-            //case to skip spaces, normally index+1 in Rust is a bad idea but here we know character is one byte long
+        if c == ' ' || c == '\r' {
+            //case to skip spaces and r, normally index+1 in Rust is a bad idea but here we know character is one byte long
             //since it is not cyrillic or an emoji
             return Some((&request[..i],&request[i+1..]));
         }
@@ -66,9 +87,18 @@ impl ParseError {
     }
 }
 
+//Error trait implementation from std
+impl Error for ParseError {}
+
 impl From<Utf8Error> for ParseError {
     fn from(_: Utf8Error) -> Self {
         Self::InvalidEncoding
+    }
+}
+
+impl From<MethodError> for ParseError {
+    fn from(_: MethodError) -> Self {
+        Self::InvalidMethod
     }
 }
 
@@ -83,9 +113,6 @@ impl Debug for ParseError{
         write!(f, "{}", self.message())
     }
 }
-
-//Error trait implementation from std
-impl Error for ParseError {}
 
 //Traits are interfaces that have to be implemented.
 trait Encrypt {
