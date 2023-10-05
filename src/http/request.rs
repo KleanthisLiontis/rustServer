@@ -14,11 +14,11 @@ pub struct Request<'life_buf> {
     method: Method,
 }
 
-//Try to convert a byte slice into our request struct
-impl<'life_buf> TryFrom<&[u8]> for Request<'life_buf> {
+//Try to convert a byte slice into our request struct, had to explicity state lifetimes
+impl<'life_buf> TryFrom<&'life_buf [u8]> for Request<'life_buf> {
     type Error = ParseError;
 
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buffer: &'life_buf [u8]) -> Result<Self, Self::Error> {
         // match str::from_utf8(buffer).or(Err(ParseError::InvalidEncoding)) {
         //     Ok(request) => {}
         //     Err(e) => return Err(e),
@@ -43,13 +43,12 @@ impl<'life_buf> TryFrom<&[u8]> for Request<'life_buf> {
         }
 
         Ok(Self {
-            path: path,
+            path,
             query_string,
             method,
         })
         // string.encrypt();
         // buffer.encrypt();
-        unimplemented!();
     }
 }
 
