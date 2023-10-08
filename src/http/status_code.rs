@@ -20,7 +20,7 @@ impl StatusCode {
 
 //unsigned u16 due to size used
 impl Display for StatusCode {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}", *self as u16)
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", *self as u16)
     }
 }

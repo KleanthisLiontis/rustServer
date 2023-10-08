@@ -1,6 +1,5 @@
-use crate::http::request;
 use super::method::{MethodError,Method};   
-use super::{QueryString,QueryStringValue};
+use super::QueryString;
 use std::convert::TryFrom; 
 use std::error::Error;
 use std::str;
@@ -16,6 +15,7 @@ pub struct Request<'life_buf> {
     method: Method,
 }
 
+//Getters for private variables
 impl<'life_buf> Request<'life_buf> {
     pub fn path(&self) -> &str {
         &self.path
