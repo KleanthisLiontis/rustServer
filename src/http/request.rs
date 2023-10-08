@@ -1,5 +1,6 @@
 use crate::http::request;
 use super::method::{MethodError,Method};   
+use super::{QueryString,QueryStringValue};
 use std::convert::TryFrom; 
 use std::error::Error;
 use std::str;
@@ -8,10 +9,24 @@ use std::str::Utf8Error;
 
 pub struct Request<'life_buf> {
     path: &'life_buf str,
-    query_string:Option <&'life_buf str>,
+    query_string:Option <QueryString<'life_buf>>,
     //super keyword tells module to go up a directory to parent and see other children that match declaration
     //method: super::method::Method,
     method: Method,
+}
+
+impl<'life_buf> Request<'life_buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query_string.as_ref()
+    }
 }
 
 //Try to convert a byte slice into our request struct, had to explicity state lifetimes
@@ -38,7 +53,7 @@ impl<'life_buf> TryFrom<&'life_buf [u8]> for Request<'life_buf> {
         let method: Method = method.parse()?;
         let mut query_string = None;
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i+1..]);
+            query_string = Some(QueryString::from(&path[i+1..]));
             path = &path[..i];
         }
 
