@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
 //Lifetime will be same as buffer
+#[derive(Debug)]
 pub struct QueryString<'life_buf>{
     data: HashMap<&'life_buf str, Value<'life_buf>>
 }
 
+#[derive(Debug)]
 pub enum Value<'life_buf> {
     Single(&'life_buf str),
     Multiple(Vec<&'life_buf str>)
@@ -17,7 +19,7 @@ impl<'life_buf> QueryString <'life_buf> {
     }
 }
 
-//\&b=2&c&d=&e===&d=7&d=abc
+//&b=2&c&d=&e===&d=7&d=abc
 impl<'life_buf> From<&'life_buf str> for QueryString<'life_buf> {
     fn from (s: &'life_buf str) -> Self{
         let mut data = HashMap::new();

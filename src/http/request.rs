@@ -7,6 +7,7 @@ use std::str;
 use std::fmt::{Formatter,Display, Result as FmtResult,Debug};
 use std::str::Utf8Error;
 
+#[derive(Debug)]
 pub struct Request<'life_buf> {
     path: &'life_buf str,
     query_string:Option <QueryString<'life_buf>>,
@@ -81,6 +82,7 @@ fn get_next_word(request: &str) -> Option<(&str,&str)>{
     //Else return None
     None
 }
+
 
 pub enum ParseError {
     InvalidRequest,

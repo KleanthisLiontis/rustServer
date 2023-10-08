@@ -2,7 +2,7 @@
 use std::net::TcpListener;
 use std::convert::TryFrom;
 use std::io::Read;
-use crate::http::Request;
+use crate::http::{ParseError, Request, Response, StatusCode};
 
 pub struct Server {
     address: String,
@@ -31,12 +31,12 @@ impl Server {
                         Ok(_) => {
                             //from lossy cannot fail so we dont have to handle errors
                             //Whatever we use here must implement display trait, to get client facing data to dev logs we could use {:?}. 
-                            print!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                            //print!("Received a request: {}", String::from_utf8_lossy(&buffer));
                             //Get Result by try to convert from buffer of a byte slice 
-                            match Request::try_from(&buffer as &[u8]) {
-                                Ok(request) => println!("Request is OK"),
-                                Err(e) => println!("Failed to parse request: {}",e),
-                            }
+                            let response = match Request::try_from(&buffer[..]) {
+                                Ok(request) => handler.handle_request(&request),
+                                Err(e) => handler.handle_bad_request(&e),
+                            };
                             //This slice will now be converted into a Requests to read from. Currently not handling errors.
                         },
                         Err(e) => println!("Failed to read from connection: {}", e),

@@ -1,6 +1,7 @@
 //Rust enums each member can have different type 
 use std::str::FromStr;
 
+#[derive(Debug)]
 pub enum Method {
     // GET(String), //= 0
     // DELETE(u64), //=1
