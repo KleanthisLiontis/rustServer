@@ -1,3 +1,5 @@
 Extend request and response implementations
 We ignore http headers that should not be the case
-We should increase performace by multithreading requests using async and tokio.
+We should increase performace by multithreading requests using async 
+and tokio for web IO multithreading.
+and rayon for cpu bound multithreading.
